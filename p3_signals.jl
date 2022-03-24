@@ -1,10 +1,12 @@
 using Sound
 using FFTW
 
+#compute note durations
+for i in 1:(length(song) / 100)
+    mean_point = mean(abs.(song[i:i+100]))
+    
+end
+#compute frequencies
 
-#record guitar signals (one for each note)
-tonic, S = record(2)
-mediant, S = record(2)
-dominant, S = record(2)
 
-#
+
