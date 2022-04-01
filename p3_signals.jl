@@ -1,6 +1,7 @@
 using Sound
 using FFTW
 using WAV: wavread
+using Plots
 
 global song, S = wavread("guitar_solo_f minor_100bpm.wav")
 
@@ -15,13 +16,11 @@ end
 threshold = 0.015;
 
 global envelope = find_envelope(song)
-#global durations = [zeros(3) for i in size(song)[1]]
 global durations = []
 
 function find_durations()
     note_attack_time = -1
     note_release_time = -1
-    note_val = -1
 
     skip = -1
 
@@ -30,12 +29,10 @@ function find_durations()
             signal_val = envelope[t]
             if signal_val > threshold && note_attack_time == -1
                 note_attack_time = t
-                note_val = signal_val
             elseif signal_val < threshold && note_attack_time != -1
                 note_release_time = t 
-                push!(durations, [note_val, note_attack_time, note_release_time])
+                push!(durations, [note_release_time - note_attack_time, note_attack_time, note_release_time])
                 note_attack_time = -1
-                note_val = -1
                 skip = t + 3500
             end
         end
@@ -72,8 +69,8 @@ end
 
 global song_len = 0
 function song_length()
-    first = durations[1][2]
-    last =  durations[length(durations)][3]
+    first = durations[1]
+    last =  durations[length(durations)]
     song_len = (last - first) / S
     song_len *= bps
     song_len = round(Integer, song_len * 4) / 4
@@ -81,12 +78,25 @@ end
 
 #compute frequencies
 
+global frequencies = []
+
+
 function compute_frequencies()
-    for i in durations
-        start_time = i[2]
-        end_time = i[3]
-        N_seg = end_time - start_time
-        signal = song[start_time:end_time]
-        Signal = 2/N_seg * abs.(fft(signal))
+    for i in 1:length(durations)
+        signal = song[durations[i][2]:durations[i][3]]
+        N = length(signal)
+        global autocorr = real(ifft(abs2.(fft([signal; zeros(size(signal))])))) / sum(abs2, signal)
+        # x = signal[1:round(Int, N/2)]
+        # k = findmax(x)[2] - 1
+        # f = (k/N) * S
+        #plot(0:length(autocorr)-1, autocorr, marker=:circle, markersize=3, color=:orange)
+
+        idxs = [autocorr[k] > autocorr[k+1] && autocorr[k] > autocorr[k-1] && autocorr[k] > 0.7 for k in 2:length(autocorr) - 1]
+        period = findall(idxs)[1]
+        f = S/period
+        push!(frequencies, f)
     end
 end
+
+#idxs = [ac[k] > ac[k+1] && ac[k] > ac[k-1] && ac[k] > 0.7 for k in 2:length(ac) - 1]
+#findall(idxs)
