@@ -62,29 +62,18 @@ function calculate_beats()
             rest_beats = rest_duration * bps
             rest_beats = round(Integer, rest_beats * 4) / 4
 
-            push!(beats, [-1, rest_beats])
+            push!(beats, [-1, rest_beats]) # value of rest is -1
         end
     end
-end
-
-global song_len = 0
-function song_length()
-    first = durations[1]
-    last =  durations[length(durations)]
-    song_len = (last - first) / S
-    song_len *= bps
-    song_len = round(Integer, song_len * 4) / 4
 end
 
 #compute frequencies
 
 global frequencies = []
 
-
 function compute_frequencies()
     for i in 1:length(durations)
         signal = song[(durations[i][2]+3500):(durations[i][3]-3500)]
-        N = length(signal)
         global autocorr = real(ifft(abs2.(fft([signal; zeros(size(signal))])))) / sum(abs2, signal)
 
         #plot(0:length(autocorr)-1, autocorr, marker=:circle, markersize=3, color=:orange)
