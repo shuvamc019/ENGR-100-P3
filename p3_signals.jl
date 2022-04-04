@@ -83,20 +83,17 @@ global frequencies = []
 
 function compute_frequencies()
     for i in 1:length(durations)
-        signal = song[durations[i][2]:durations[i][3]]
+        signal = song[(durations[i][2]+3500):(durations[i][3]-3500)]
         N = length(signal)
         global autocorr = real(ifft(abs2.(fft([signal; zeros(size(signal))])))) / sum(abs2, signal)
-        # x = signal[1:round(Int, N/2)]
-        # k = findmax(x)[2] - 1
-        # f = (k/N) * S
+
         #plot(0:length(autocorr)-1, autocorr, marker=:circle, markersize=3, color=:orange)
 
-        idxs = [autocorr[k] > autocorr[k+1] && autocorr[k] > autocorr[k-1] && autocorr[k] > 0.7 for k in 2:length(autocorr) - 1]
+        idxs = [autocorr[k] > autocorr[k+1] && autocorr[k] > autocorr[k-1] && autocorr[k] > 0.75 for k in 2:length(autocorr) - 1]
         period = findall(idxs)[1]
         f = S/period
         push!(frequencies, f)
     end
 end
 
-#idxs = [ac[k] > ac[k+1] && ac[k] > ac[k-1] && ac[k] > 0.7 for k in 2:length(ac) - 1]
-#findall(idxs)
+# should consider making a song class so we can get song.frequencies, song.durations, etc... would make things easier
