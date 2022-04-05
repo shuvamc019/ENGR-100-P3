@@ -31,7 +31,7 @@ function find_durations()
                 note_attack_time = t
             elseif signal_val < threshold && note_attack_time != -1
                 note_release_time = t 
-                push!(durations, [note_release_time - note_attack_time, note_attack_time, note_release_time])
+                push!(durations, (note_release_time - note_attack_time, note_attack_time, note_release_time))
                 note_attack_time = -1
                 skip = t + 3500
             end
@@ -64,7 +64,7 @@ function compute_frequencies()
         note_beats = duration_seconds * bps
         note_beats = round(Integer, note_beats * 4) / 4 #rounds to nearest 0.25
 
-        push!(frequencies, [frequency, note_beats])
+        push!(frequencies, (frequency, note_beats))
 
         if i != length(durations)
             next_note = durations[i + 1]
@@ -73,7 +73,7 @@ function compute_frequencies()
             rest_beats = rest_duration * bps
             rest_beats = round(Integer, rest_beats * 4) / 4
 
-            push!(frequencies, [-1, rest_beats]) # "frequency" of rest is -1
+            push!(frequencies, (-1, rest_beats)) # "frequency" of rest is -1
         end
     end
 end
