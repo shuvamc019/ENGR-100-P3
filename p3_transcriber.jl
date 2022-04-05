@@ -51,33 +51,54 @@ function correlate()
         note_beats = frequencies[i][2]
 
         if frequency != -1 #this would be a rest
+            possible_indices = [] #all possible locations for this frequency
+
             for j in 1:length(fret_frequencies)
                 if frequency > fret_frequencies[j] && frequency < fret_frequencies[j + 1] #frequency is between these 2 values
-                    index = -1
                     if (fret_frequencies[j + 1] - frequency) > (fret_frequencies[j] - frequency)
-                        index = j - 1 #uses 0-based index for convenient computations
+                        push!(possible_indices, j - 1) #uses 0-based index for convenient computations
                     else
-                        index = j
+                        push!(possible_indices, j - 1)
                     end
-
-                    string = floor(index / 13) + 1
-                    fret = index % 13
-
-                    push!(note_frets, [string, fret, note_beats])
                 end
-            end    
+            end 
+
+            last_s, last_f = 0, 0 #the string and fret of the last played note
+            if i >= 3
+                last_s, last_f = note_frets[i - 2][1], note_frets[i - 2][2]
+            end
+            
+            index = possible_indices[1]
+            for k in 2:length(possible_indices) #finds the closest index to the last played note
+                old_s, old_f = ind_to_fret
+                new_s, new_f = ind_to_fret(possible_indices[k]) #string and fret of this index
+
+                old_dist = calculate_distance(last_s, last_f, old_s, old_f)
+                new_dist = calculate_distance(last_s, last_f, new_s, new_f)
+
+                if(new_dist < old_dist)
+                    index = cur_ind
+                end
+            end
+
+            string, fret = ind_to_fret(index)
+
+            push!(note_frets, [string, fret, note_beats])
+
         else
             push!(note_frets, [-1, -1, note_beats]) #string/fret for a rest is -1
         end                          
     end
 end
 
-#finds distance between 2 indices
-function calculate_distance(i1, i2)
-    r1 = floor(i1 / 13) + 1
-    c1 = i1 % 13
-    r2 = floor(i2 / 13) + 1
-    c2 = i2 % 13
+#finds distance between 2 string/fret pairs
+function calculate_distance(s1, f1, s2, f2)
+    return sqrt((s2 - s1)^2 + (f2 - f1)^2)
+end
 
-    return sqrt((r2 - r1)^2 + (c2 - c1)^2)
+#converts a frequencies-vector index to string and fret #s
+function ind_to_fret(ind)
+    string = floor(ind / 13) + 1
+    fret = ind % 13
+    return string, fret
 end
