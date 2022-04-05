@@ -3,7 +3,7 @@ using Gtk
 
 g = GtkGrid()
 
-record_button = GtkButton("record")
+record_button = GtkButton( recordf)
 signal_connect(click_record, record_button, "clicked")
 #style to come later
 
@@ -15,4 +15,5 @@ function click_record(w)
     song, S = record(1)
     return nothing
 end
+
 
