@@ -1,4 +1,4 @@
-using Plots
+ using Plots
 
 durations = []
 
@@ -47,20 +47,37 @@ end
 global note_frets = []
 function correlate()
     for i in 1:length(frequencies) 
-        for j in 1:length(fret_frequencies)
-            if frequencies[i] > fret_frequencies[j] && frequencies[i] < fret_frequencies[j + 1] #frequency is between these 2 values
-                index = -1
-                if (fret_frequencies[j + 1] - frequencies[i]) > (fret_frequencies[j] - frequencies[i])
-                    index = j - 1
-                else
-                    index = j
+        frequency = frequencies[i][1]
+        note_beats = frequencies[i][2]
+
+        if frequency != -1 #this would be a rest
+            for j in 1:length(fret_frequencies)
+                if frequency > fret_frequencies[j] && frequency < fret_frequencies[j + 1] #frequency is between these 2 values
+                    index = -1
+                    if (fret_frequencies[j + 1] - frequency) > (fret_frequencies[j] - frequency)
+                        index = j - 1 #uses 0-based index for convenient computations
+                    else
+                        index = j
+                    end
+
+                    string = floor(index / 13) + 1
+                    fret = index % 13
+
+                    push!(note_frets, [string, fret, note_beats])
                 end
-
-                fret = round(Integer, index % 13)
-                string = round(Integer, floor(index / 13))
-
-                push!(note_frets, [string, fret])
-            end
-        end                                 
+            end    
+        else
+            push!(note_frets, [-1, -1, note_beats]) #string/fret for a rest is -1
+        end                          
     end
+end
+
+#finds distance between 2 indices
+function calculate_distance(i1, i2)
+    r1 = floor(i1 / 13) + 1
+    c1 = i1 % 13
+    r2 = floor(i2 / 13) + 1
+    c2 = i2 % 13
+
+    return sqrt((r2 - r1)^2 + (c2 - c1)^2)
 end

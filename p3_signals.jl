@@ -39,49 +39,42 @@ function find_durations()
     end
 end
 
-global beats = []
-global bpm = 100 # give the user the ability to input this later on
-bps = bpm / 60
-
-function calculate_beats()
-    for i in 1:length(durations)
-        note = durations[i]
-        val = note[1]
-        duration = (note[3] - note[2]) / S
-
-        note_beats = duration * bps
-        note_beats = round(Integer, note_beats * 4) / 4 #rounds to nearest 0.25
-
-        push!(beats, [val, note_beats])
-
-        if i != length(durations)
-
-            next_note = durations[i + 1]
-            rest_duration = (next_note[2] - note[3]) / S
-
-            rest_beats = rest_duration * bps
-            rest_beats = round(Integer, rest_beats * 4) / 4
-
-            push!(beats, [-1, rest_beats]) # value of rest is -1
-        end
-    end
-end
-
 #compute frequencies
 
+global bpm = 100 # give the user the ability to input this later on
+bps = bpm / 60
 global frequencies = []
 
 function compute_frequencies()
     for i in 1:length(durations)
-        signal = song[(durations[i][2]+3500):(durations[i][3]-3500)]
+        note = durations[i]
+        start_time = note[2]
+        end_time = note[3] 
+        duration_seconds = (end_time - start_time) / S
+
+        signal = song[(start_time+3500):(end_time-3500)]
         global autocorr = real(ifft(abs2.(fft([signal; zeros(size(signal))])))) / sum(abs2, signal)
 
         #plot(0:length(autocorr)-1, autocorr, marker=:circle, markersize=3, color=:orange)
 
         idxs = [autocorr[k] > autocorr[k+1] && autocorr[k] > autocorr[k-1] && autocorr[k] > 0.75 for k in 2:length(autocorr) - 1]
         period = findall(idxs)[1]
-        f = S/period
-        push!(frequencies, f)
+        frequency = S/period
+
+        note_beats = duration_seconds * bps
+        note_beats = round(Integer, note_beats * 4) / 4 #rounds to nearest 0.25
+
+        push!(frequencies, [frequency, note_beats])
+
+        if i != length(durations)
+            next_note = durations[i + 1]
+            rest_duration = (next_note[2] - note[3]) / S
+
+            rest_beats = rest_duration * bps
+            rest_beats = round(Integer, rest_beats * 4) / 4
+
+            push!(frequencies, [-1, rest_beats]) # "frequency" of rest is -1
+        end
     end
 end
 
