@@ -3,7 +3,7 @@ using FFTW
 using WAV: wavread
 using Plots
 
-global song, S = wavread("guitar_solo_f minor_100bpm.wav")
+song, S = wavread("guitar_solo_f minor_100bpm.wav")
 
 #compute note durations
 function find_envelope(x; h::Int = 1000) # sliding window half-width
@@ -15,8 +15,8 @@ end
 
 threshold = 0.015;
 
-global envelope = find_envelope(song)
-global durations = []
+envelope = find_envelope(song)
+durations = []
 
 function find_durations()
     note_attack_time = -1
@@ -41,7 +41,7 @@ end
 
 #compute frequencies
 
-global bpm = 100 # give the user the ability to input this later on
+bpm = 100 # give the user the ability to input this later on
 bps = bpm / 60
 global frequencies = []
 

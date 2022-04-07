@@ -2,8 +2,8 @@ fret_frequencies = [82.41,87.31,92.5,98.0,103.83,110,116.54,123.47,130.81,138.59
                     110,116.54,123.47,130.81,138.59,146.83,155.56,164.81,174.61,185.0,196.0,207.65,220,
                     146.83,155.56,164.81,174.61,185.0,196.0,207.65,220,233.08,246.94,261.63,277.18,293.66,
                     196.0,207.65,220,223.08,246.94,261.63,277.18,293.66,311.13,329.63,349.23,369.99,392.0,246.94,
-                261.63,277.18,293.66,311.13,329.63,349.23,369.99,392.0,415.3,440.0,466.16,493.88,329.63,349.23,369.99,392.0,415.3,
-                440.0,466.16,493.88,523.25,554.37,587.33,622.25,659.65]
+                     261.63,277.18,293.66,311.13,329.63,349.23,369.99,392.0,415.3,440.0,466.16,493.88,329.63,349.23,
+                     369.99,392.0,415.3, 440.0,466.16,493.88,523.25,554.37,587.33,622.25,659.65]
 
 global note_frets = []
 function correlate()
@@ -44,17 +44,21 @@ function ind_to_fret(ind)
     return string, fret
 end
 
+#calculates distance between 2 string/fret pairs
+function distance(s1, f1, s2, f2)
+    return √((s2 - s1)^2 + (f2 - f1)^2)
+end
+
 #given the previously played note a vector of candidate notes, finds easiest one to play
 function find_best_note(possible_indices, last_s, last_f)
     best_s, best_f = ind_to_fret(possible_indices[1])
     for k in 2:length(possible_indices) #finds the closest index to the last played note
         s, f = ind_to_fret(possible_indices[k]) #string and fret of this index
 
-        if (abs(f - last_f) < abs(best_f - last_f)) #prioritize closest fret
+        if (distance(s, f, last_s, last_f) < distance(best_s, best_f, last_s, last_f)) #prioritize closest fret
             best_s, best_f = ind_to_fret(possible_indices[k])
         end
     end
 
     return best_s, best_f
 end
-
