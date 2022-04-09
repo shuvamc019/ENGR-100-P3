@@ -1,4 +1,3 @@
-using Plots
 using Gtk
 using Sound
 
@@ -11,7 +10,7 @@ set_gtk_property!(a, :text, "This is Gtk!")
 b = GtkCheckButton("Check me!")
 c = GtkScale(false, 0:10)     # a slider
 
-g[1,1] = a
+g[1,1] = a # cartesian coordinates, not row/col, and (0,0) is upper left)
 g[2,1] = b
 g[1:2,2] = c
 
