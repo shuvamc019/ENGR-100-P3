@@ -3,7 +3,7 @@ using FFTW
 using WAV: wavread
 using Plots
 
-song, S = wavread("guitar_solo_f minor_100bpm.wav")
+global song, sample = wavread("guitar_solo_f minor_100bpm.wav")
 
 #compute note durations
 function find_envelope(x; h::Int = 1000) # sliding window half-width
@@ -50,7 +50,7 @@ function compute_frequencies()
         note = durations[i]
         start_time = note[2]
         end_time = note[3] 
-        duration_seconds = (end_time - start_time) / S
+        duration_seconds = (end_time - start_time) / sample
 
         signal = song[(start_time+3500):(end_time-3500)]
         global autocorr = real(ifft(abs2.(fft([signal; zeros(size(signal))])))) / sum(abs2, signal)
@@ -59,7 +59,7 @@ function compute_frequencies()
 
         idxs = [autocorr[k] > autocorr[k+1] && autocorr[k] > autocorr[k-1] && autocorr[k] > 0.75 for k in 2:length(autocorr) - 1]
         period = findall(idxs)[1]
-        frequency = S/period
+        frequency = sample/period
 
         note_beats = duration_seconds * bps
         note_beats = round(Integer, note_beats * 4) / 4 #rounds to nearest 0.25
@@ -68,7 +68,7 @@ function compute_frequencies()
 
         if i != length(durations)
             next_note = durations[i + 1]
-            rest_duration = (next_note[2] - note[3]) / S
+            rest_duration = (next_note[2] - note[3]) / sample
 
             rest_beats = rest_duration * bps
             rest_beats = round(Integer, rest_beats * 4) / 4
