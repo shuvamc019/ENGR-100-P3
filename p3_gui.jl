@@ -34,15 +34,15 @@ using Gtk
 using PortAudio: PortAudioStream
 using Sound: sound
 
-#=
+
 # initialize global variables that are used throughout
-S = nothing # sampling rate (samples/second)
+S2 = nothing # sampling rate (samples/second)
 const N = 1024 # buffer length
 const maxtime = 10 # maximum recording time 10 seconds (for demo)
 recording = nothing # flag
 nsample = 0 # count number of samples recorded
 song = nothing # initialize "song"
-=#
+
 
 
 # callbacks
@@ -81,7 +81,7 @@ function call_record(w)
     in_stream = PortAudioStream(1, 0) # default input device
     buf = read(in_stream, N) # warm-up
     global recording = true
-    global song = zeros(Float32, maxtime * S)
+    global song = zeros(Float32, maxtime * S2)
     @async record_loop!(in_stream, buf)
     nothing
 end
@@ -139,32 +139,35 @@ bp = make_button("Play", call_play, 3, 2, "wg", "color:white; background:green;"
 
 # third row
 btext = GtkTextView()
-g[1:3,3] = btext
+bbuffer = Gtk.gtk_text_view_get_buffer(btext)
+#biter = Gtk.gtk_text_buffer_get_end_iter() # is this how to get the default iter position in the textview box?
+
 
 function display_tab()
     for string_num in 1:6
         for note in note_frets
-            string, fret, duration = note[1], note[2], (note[3] / 0.25) # /.25 since duration is in beats and 16th note is smallest duration in our program
-            if string == string_num
+            stringN, fret, duration = note[1], note[2], (note[3] / 0.25) # /.25 since duration is in beats and 16th note is smallest duration in our program
+            if stringN == string_num
                 fret = string(fret)
-                set_gtk_property!(btext, :text, fret)
+                Gtk.gtk(bbuffer, fret)  # insert fret number
                 for _ in 2:duration
-                    set_gtk_property!(btext, :text, "*")
+                    bbuffer   # insert *
                 end
             else
                 for _ in 1:duration
-                    set_gtk_property!(btext, :text, "-")
+                    Gtk.insert(bbuffer, biter, "-")  # insert -
                 end
             end  
         end
-        set_gtk_property!(btext, :text, "\n")
+        Gtk.insert(bbuffer, biter, "-") # insert -
     end
 end
+
+g[1:3,3] = btext
 
 win = GtkWindow("gtk3", 600, 400) # 600×200 pixel window for all the buttons
 push!(win, g) # put button grid into the window
 showall(win) # display the window full of buttons
 display_tab()
 nothing
-
 
