@@ -139,7 +139,7 @@ bp = make_button("Play", call_play, 3, 2, "wg", "color:white; background:green;"
 
 # third row
 btext = GtkTextView()
-bbuffer = Gtk.gtk_text_view_get_buffer(btext)
+bbuffer = get_gtk_property(btext, :buffer, GtkTextBufferLeaf)
 #biter = Gtk.gtk_text_buffer_get_end_iter() # is this how to get the default iter position in the textview box?
 
 
@@ -149,17 +149,17 @@ function display_tab()
             stringN, fret, duration = note[1], note[2], (note[3] / 0.25) # /.25 since duration is in beats and 16th note is smallest duration in our program
             if stringN == string_num
                 fret = string(fret)
-                Gtk.gtk(bbuffer, fret)  # insert fret number
+                set_gtk_property!(bbuffer, :text, fret) # insert fret number
                 for _ in 2:duration
-                    bbuffer   # insert *
+                    set_gtk_property!(bbuffer, :text, "*")
                 end
             else
                 for _ in 1:duration
-                    Gtk.insert(bbuffer, biter, "-")  # insert -
+                    set_gtk_property!(bbuffer, :text, "-")  # insert -
                 end
             end  
         end
-        Gtk.insert(bbuffer, biter, "-") # insert -
+        set_gtk_property!(bbuffer, :text, "-") # insert -
     end
 end
 
