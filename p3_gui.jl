@@ -1,48 +1,26 @@
-#=using Gtk
-using Sound
-
-win = GtkWindow("[Insert Song/Tab Title Here]", 600, 600)
-g = GtkGrid()
-set_gtk_property!(g, :column_homogeneous, true)
-set_gtk_property!(g, :column_spacing, 15)  # introduce a 15-pixel gap between columns
-
-entry_text = GtkLabel("Record or upload your song here: ")
-record_button = GtkButton("Record")
-upload_button = GtkButton("Upload")
-
-function upload_file()
-    song, S = wavread(open_dialog("Pick a .wav file", Null(), ("*.wav",)))
-end
-
-function on_record(w)
-    song, S = record(100)
-end
-
-signal_connect(on_record, record_button, "clicked")
-signal_connect(upload_file, upload_button, "clicked")
-
-# for Gtk grid, cartesian coordinates, not row/col, and (0,0) is upper left
-
-
-push!(win, g)
-showall(win);=#
-
-#using Gtk: GtkGrid, GtkButton, GtkWindow, GAccessor, TextView
-#using Gtk: GtkCssProvider, GtkStyleProvider
-#using Gtk: set_gtk_property!, signal_connect, showall
 using Gtk
 using PortAudio: PortAudioStream
 using Sound: sound
-
+include("p3_signals.jl")
+include("p3_transcriber.jl")
 
 # initialize global variables that are used throughout
-S2 = nothing # sampling rate (samples/second)
+S2 = 48000 # sampling rate (samples/second)
 const N = 1024 # buffer length
-const maxtime = 10 # maximum recording time 10 seconds (for demo)
+const maxtime = 100 # maximum recording time 10 seconds (for demo)
 recording = nothing # flag
 nsample = 0 # count number of samples recorded
 song = nothing # initialize "song"
+global initial_tab = ""
 
+
+function analyze_signals(song, S, bpm)
+    envelope = find_envelope(song) # find envelope needs song vector
+    durations = find_durations(envelope)
+    frequencies = compute_frequencies(durations, S, bpm)
+    note_frets = correlate(frequencies)
+    return note_frets
+end
 
 
 # callbacks
@@ -91,11 +69,28 @@ end
 function call_stop(w)
     global recording = false
     global nsample
+
     duration = round(nsample / S2, digits=2)
     sleep(0.1) # ensure the async record loop finished
     flush(stdout)
     println("\nStop at nsample=$nsample, for $duration out of $maxtime sec.")
     global song = song[1:nsample] # truncate song to the recorded duration
+
+    bpm = input_dialog("Enter BPM", "")
+    bpm = parse(Int64, bpm[2])
+
+    note_frets = analyze_signals(song, S2, bpm)
+    display_tab(note_frets)
+end
+
+#callback function to upload a file
+function upload_file(w)
+    filename = open_dialog("Pick a file", GtkNullContainer(), ("*.wav",))
+    song, S = wavread(string(filename))
+    println(filename)
+    note_frets = analyze_signals(song, S)
+    #println(note_frets)
+    display_tab(note_frets)
 end
 
 
@@ -103,11 +98,6 @@ end
 function call_play(w)
     println("Play")
     @async sound(song, S2) # play the entire recording
-end
-
-# callback function for "upload" button
-function call_upload(w)
-    song, S2 = wavread(open_dialog("Pick a .wav file", Null(), ("*.wav",)))
 end
 
 
@@ -136,19 +126,22 @@ end
 br = make_button("Record", call_record, 1, 2, "wr", "color:white; background:red;")
 bs = make_button("Stop", call_stop, 2, 2, "yb", "color:yellow; background:blue;")
 bp = make_button("Play", call_play, 3, 2, "wg", "color:white; background:green;")
+bu = make_button("Upload", upload_file, 4, 2, "by", "color:blue; background:yellow;")
 
 # third row
 btext = GtkTextView()
 bbuffer = get_gtk_property(btext, :buffer, GtkTextBufferLeaf)
 
-function display_tab()
-    global initial_tab = ""
-    for string_num in 6:1  # 6th string is the lowest on the guitar
+string_names = ['E', 'A', 'D', 'G', 'B', 'e']
+
+function display_tab(note_frets)
+    initial_tab = ""
+    for string_num in 6:-1:1  # 6th string is the lowest on the guitar
+        initial_tab *= string_names[string_num]
         for note in note_frets
             stringN, fret, duration = note[1], note[2], (note[3] / 0.25) # /.25 since duration is in beats and 16th note is smallest duration in our program
             if stringN == string_num
-                fret = string(fret)
-                initial_tab *= fret # insert fret number
+                initial_tab *= string(fret) # insert fret number
                 for _ in 2:duration
                     initial_tab *= "*"
                 end
@@ -160,18 +153,20 @@ function display_tab()
         end
         initial_tab *= "\n" # insert newline
     end
+
+    set_gtk_property!(bbuffer, :text, initial_tab)
+    set_gtk_property!(btext, :monospace, true)
 end
 
-set_gtk_property!(bbuffer, :text, initial_tab)
-#set_gtk_property!(btext, :monospace, true)
+
+
 
 ## NEED AN UPDATE TAB BUTTON FASHO##
 
-g[1:3,3] = btext
+g[1:4,3] = btext
 
 win = GtkWindow("gtk3", 600, 400) # 600×200 pixel window for all the buttons
 push!(win, g) # put button grid into the window
 showall(win) # display the window full of buttons
-display_tab()
 nothing
 

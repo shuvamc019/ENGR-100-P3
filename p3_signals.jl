@@ -13,12 +13,9 @@ function find_envelope(x; h::Int = 1000) # sliding window half-width
     zeros(h)]
 end
 
-threshold = 0.015;
 
-envelope = find_envelope(song)
-durations = []
-
-function find_durations()
+function find_durations(envelope, threshold::Float64 = 0.015)
+    durations = []
     note_attack_time = -1
     note_release_time = -1
 
@@ -37,15 +34,16 @@ function find_durations()
             end
         end
     end
+
+    return durations
 end
 
 #compute frequencies
 
-bpm = 100 # give the user the ability to input this later on
-bps = bpm / 60
-global frequencies = []
+function compute_frequencies(durations, sample, bpm)
+    frequencies = []
+    bps = bpm / 60  
 
-function compute_frequencies()
     for i in 1:length(durations)
         note = durations[i]
         start_time = note[2]
@@ -57,7 +55,7 @@ function compute_frequencies()
 
         #plot(0:length(autocorr)-1, autocorr, marker=:circle, markersize=3, color=:orange)
 
-        idxs = [autocorr[k] > autocorr[k+1] && autocorr[k] > autocorr[k-1] && autocorr[k] > 0.75 for k in 2:length(autocorr) - 1]
+        idxs = [autocorr[k] > autocorr[k+1] && autocorr[k] > autocorr[k-1] && autocorr[k] > 0.8 for k in 2:length(autocorr) - 1]  #
         period = findall(idxs)[1]
         frequency = sample/period
 
@@ -76,6 +74,8 @@ function compute_frequencies()
             push!(frequencies, (-1, rest_beats)) # "frequency" of rest is -1
         end
     end
+
+    return frequencies
 end
 
 # should consider making a song class so we can get song.frequencies, song.durations, etc... would make things easier

@@ -6,7 +6,7 @@ fret_frequencies = [82.41,87.31,92.5,98.0,103.83,110,116.54,123.47,130.81,138.59
                      369.99,392.0,415.3, 440.0,466.16,493.88,523.25,554.37,587.33,622.25,659.65]
 
 global note_frets = []
-function correlate()
+function correlate(frequencies)
     for i in 1:length(frequencies) 
         frequency = frequencies[i][1]
         note_beats = frequencies[i][2]
@@ -35,6 +35,8 @@ function correlate()
             push!(note_frets, (-1, -1, note_beats)) #string/fret for a rest is -1
         end                          
     end
+
+    return note_frets
 end
 
 #converts a frequencies-vector index to string and fret #s
