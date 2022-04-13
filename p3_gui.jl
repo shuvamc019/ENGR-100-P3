@@ -87,9 +87,16 @@ end
 function upload_file(w)
     filename = open_dialog("Pick a file", GtkNullContainer(), ("*.wav",))
     song, S = wavread(string(filename))
-    println(filename)
-    note_frets = analyze_signals(song, S)
-    #println(note_frets)
+
+    println(size(song))
+
+    bpm = input_dialog("Enter BPM", "")
+    bpm = parse(Int64, bpm[2])
+
+    note_frets = analyze_signals(song, S, bpm)
+
+    println(note_frets)
+    
     display_tab(note_frets)
 end
 

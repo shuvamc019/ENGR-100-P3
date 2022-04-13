@@ -9,8 +9,8 @@ global song, sample = wavread("guitar_solo_f minor_100bpm.wav")
 function find_envelope(x; h::Int = 1000) # sliding window half-width
     x = abs.(x)
     return [zeros(h);
-    [sum(x[(n-h):(n+h)]) / (2h+1) for n in (h+1):(length(x)-h)];
-    zeros(h)]
+    [sum(x[(n-h):(n+h)]) / (2h+1) for n in (h+1):(length(x)-h)];  ## FFTW could not create plan is caused by fft(Float32[]),
+    zeros(h)]                                                     ## so maybe 
 end
 
 
@@ -40,7 +40,7 @@ end
 
 #compute frequencies
 
-function compute_frequencies(durations, sample, bpm)
+function compute_frequencies(durations, sample, bpm, buffer::Int64=3500)
     frequencies = []
     bps = bpm / 60  
 
@@ -50,12 +50,12 @@ function compute_frequencies(durations, sample, bpm)
         end_time = note[3] 
         duration_seconds = (end_time - start_time) / sample
 
-        signal = song[(start_time+3500):(end_time-3500)]
+        signal = song[(start_time+buffer):(end_time-buffer)]  ## start_time must be greater than end_time somewhere, maybe indexing issue
         global autocorr = real(ifft(abs2.(fft([signal; zeros(size(signal))])))) / sum(abs2, signal)
 
         #plot(0:length(autocorr)-1, autocorr, marker=:circle, markersize=3, color=:orange)
 
-        idxs = [autocorr[k] > autocorr[k+1] && autocorr[k] > autocorr[k-1] && autocorr[k] > 0.8 for k in 2:length(autocorr) - 1]  #
+        idxs = [autocorr[k] > autocorr[k+1] && autocorr[k] > autocorr[k-1] && autocorr[k] > 0.8 for k in 2:length(autocorr) - 1]
         period = findall(idxs)[1]
         frequency = sample/period
 
