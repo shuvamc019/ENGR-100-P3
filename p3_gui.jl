@@ -10,14 +10,16 @@ const N = 1024 # buffer length
 const maxtime = 100 # maximum recording time 10 seconds (for demo)
 recording = nothing # flag
 nsample = 0 # count number of samples recorded
-song = nothing # initialize "song"
+#song = nothing # initialize "song"  ##commented out since it was causing issues in analyze_signals
 global initial_tab = ""
 
 
 function analyze_signals(song, S, bpm)
     envelope = find_envelope(song) # find envelope needs song vector
-    durations = find_durations(envelope)
-    frequencies = compute_frequencies(durations, S, bpm)
+    durations = find_durations(envelope) # this is fine
+    bpm = convert(Float32, bpm)
+    print(durations)
+    frequencies = compute_frequencies(song, durations, S, bpm) # here is the problem child
     note_frets = correlate(frequencies)
     return note_frets
 end
@@ -78,6 +80,7 @@ function call_stop(w)
 
     bpm = input_dialog("Enter BPM", "")
     bpm = parse(Int64, bpm[2])
+    #bpm = convert(Float, bpm)
 
     note_frets = analyze_signals(song, S2, bpm)
     display_tab(note_frets)
@@ -88,10 +91,11 @@ function upload_file(w)
     filename = open_dialog("Pick a file", GtkNullContainer(), ("*.wav",))
     song, S = wavread(string(filename))
 
-    println(size(song))
+    #println(size(song))
 
     bpm = input_dialog("Enter BPM", "")
     bpm = parse(Int64, bpm[2])
+    #bpm = convert(Float, bpm)
 
     note_frets = analyze_signals(song, S, bpm)
 
@@ -139,7 +143,7 @@ bu = make_button("Upload", upload_file, 4, 2, "by", "color:blue; background:yell
 btext = GtkTextView()
 bbuffer = get_gtk_property(btext, :buffer, GtkTextBufferLeaf)
 
-string_names = ['E', 'A', 'D', 'G', 'B', 'e']
+string_names = ["E ", "A ", "D ", "G ", "B ", "e "]
 
 function display_tab(note_frets)
     initial_tab = ""

@@ -24,6 +24,10 @@ function correlate(frequencies)
                 end
             end 
 
+            if length(possible_indices) == 0
+                push!(note_frets, (-1, -1, note_beats)) #note not recognized so treat like a rest
+            end
+
             last_s, last_f = 0, 0 #the string and fret of the last played note
             if i >= 3
                 last_s, last_f = note_frets[i - 2][1], note_frets[i - 2][2]

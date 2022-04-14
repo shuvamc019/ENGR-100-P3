@@ -3,7 +3,7 @@ using FFTW
 using WAV: wavread
 using Plots
 
-global song, sample = wavread("guitar_solo_f minor_100bpm.wav")
+#global song, sample = wavread("guitar_solo_f minor_100bpm.wav")
 
 #compute note durations
 function find_envelope(x; h::Int = 1000) # sliding window half-width
@@ -40,23 +40,32 @@ end
 
 #compute frequencies
 
-function compute_frequencies(durations, sample, bpm, buffer::Int64=3500)
+function compute_frequencies(song::Vector, durations::Vector, sample::Int, bpm::Float32, buffer::Int=150)
     frequencies = []
+    if length(durations) == 0
+        return frequencies
+    end
     bps = bpm / 60  
 
-    for i in 1:length(durations)
-        note = durations[i]
-        start_time = note[2]
+    for j in 1:length(durations)  #bound error??? line 98 in number.jl
+
+        note = durations[j]
+        start_time = note[2] #start_time could be float
         end_time = note[3] 
         duration_seconds = (end_time - start_time) / sample
 
-        signal = song[(start_time+buffer):(end_time-buffer)]  ## start_time must be greater than end_time somewhere, maybe indexing issue
-        global autocorr = real(ifft(abs2.(fft([signal; zeros(size(signal))])))) / sum(abs2, signal)
+        signal = song[(start_time+buffer):(end_time-buffer)]
+        if length(signal) == 0
+            continue
+        end
+        autocorr = real((ifft(abs2.(fft([signal; zeros(size(signal))])))) / sum(abs2, signal))
 
-        #plot(0:length(autocorr)-1, autocorr, marker=:circle, markersize=3, color=:orange)
-
-        idxs = [autocorr[k] > autocorr[k+1] && autocorr[k] > autocorr[k-1] && autocorr[k] > 0.8 for k in 2:length(autocorr) - 1]
-        period = findall(idxs)[1]
+        idxs = [autocorr[k] > autocorr[k+1] && autocorr[k] > autocorr[k-1] && autocorr[k] > 0.8 for k in 2:(length(autocorr) - 1)]
+        all_idxs = findall(idxs)
+        if length(all_idxs) == 0
+            continue
+        end
+        period = all_idxs[1]
         frequency = sample/period
 
         note_beats = duration_seconds * bps
@@ -64,8 +73,8 @@ function compute_frequencies(durations, sample, bpm, buffer::Int64=3500)
 
         push!(frequencies, (frequency, note_beats))
 
-        if i != length(durations)
-            next_note = durations[i + 1]
+        if j != length(durations)
+            next_note = durations[j + 1]
             rest_duration = (next_note[2] - note[3]) / sample
 
             rest_beats = rest_duration * bps
