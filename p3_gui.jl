@@ -114,7 +114,7 @@ end
 
 g = GtkGrid() # initialize a grid to hold buttons
 set_gtk_property!(g, :column_spacing, 10) # gaps between buttons
-set_gtk_property!(g, :row_homogeneous, true) # stretch with window resize
+set_gtk_property!(g, :row_homogeneous, false) # stretch with window resize
 set_gtk_property!(g, :column_homogeneous, true)
 
 
@@ -147,22 +147,26 @@ string_names = ["E ", "A ", "D ", "G ", "B ", "e "]
 
 function display_tab(note_frets)
     initial_tab = ""
-    for string_num in 6:-1:1  # 6th string is the lowest on the guitar
-        initial_tab *= string_names[string_num]
-        for note in note_frets
-            stringN, fret, duration = note[1], note[2], (note[3] / 0.25) # /.25 since duration is in beats and 16th note is smallest duration in our program
-            if stringN == string_num
-                initial_tab *= string(fret) # insert fret number
-                for _ in 2:duration
-                    initial_tab *= "*"
-                end
-            else
-                for _ in 1:duration
-                    initial_tab *= "-"  # insert -
-                end
-            end  
+    for line in note_frets
+        
+        for string_num in 6:-1:1  # 6th string is the lowest on the guitar
+            initial_tab *= string_names[string_num]
+            for note in line
+                stringN, fret, duration = note[1], note[2], (note[3] / 0.25) # /.25 since duration is in beats and 16th note is smallest duration in our program
+                if stringN == string_num
+                    initial_tab *= string(fret) # insert fret number
+                    for _ in 2:duration
+                        initial_tab *= "_"
+                    end
+                else
+                    for _ in 1:duration
+                        initial_tab *= "-"  # insert -
+                    end
+                end  
+            end
+            initial_tab *= "\n" # insert newline
         end
-        initial_tab *= "\n" # insert newline
+        initial_tab *= "\n"
     end
 
     set_gtk_property!(bbuffer, :text, initial_tab)

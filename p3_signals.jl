@@ -40,31 +40,37 @@ end
 
 #compute frequencies
 
-function compute_frequencies(song::Vector, durations::Vector, sample::Int, bpm::Float32, buffer::Int=150)
+function compute_frequencies(song, durations, sample, bpm::Float32, buffer::Int=150)
     frequencies = []
+    
     if length(durations) == 0
         return frequencies
     end
+
     bps = bpm / 60  
 
-    for j in 1:length(durations)  #bound error??? line 98 in number.jl
+    for j in 1:length(durations) 
 
         note = durations[j]
-        start_time = note[2] #start_time could be float
+        start_time = note[2]
         end_time = note[3] 
         duration_seconds = (end_time - start_time) / sample
 
         signal = song[(start_time+buffer):(end_time-buffer)]
+        
         if length(signal) == 0
             continue
         end
+        
         autocorr = real((ifft(abs2.(fft([signal; zeros(size(signal))])))) / sum(abs2, signal))
 
         idxs = [autocorr[k] > autocorr[k+1] && autocorr[k] > autocorr[k-1] && autocorr[k] > 0.8 for k in 2:(length(autocorr) - 1)]
         all_idxs = findall(idxs)
+        
         if length(all_idxs) == 0
             continue
         end
+    
         period = all_idxs[1]
         frequency = sample/period
 

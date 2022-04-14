@@ -7,7 +7,14 @@ fret_frequencies = [82.41,87.31,92.5,98.0,103.83,110,116.54,123.47,130.81,138.59
 
 global note_frets = []
 function correlate(frequencies)
+    max_notes = 30 # max number of notes for an entire row of tablature
+    current_note = 0
+    current_line = []
+
+    last_s, last_f = 0, 0
+
     for i in 1:length(frequencies) 
+        current_note += 1
         frequency = frequencies[i][1]
         note_beats = frequencies[i][2]
 
@@ -25,19 +32,26 @@ function correlate(frequencies)
             end 
 
             if length(possible_indices) == 0
-                push!(note_frets, (-1, -1, note_beats)) #note not recognized so treat like a rest
-            end
-
-            last_s, last_f = 0, 0 #the string and fret of the last played note
-            if i >= 3
-                last_s, last_f = note_frets[i - 2][1], note_frets[i - 2][2]
+                push!(current_line, (-1, -1, note_beats)) #note not recognized so treat like a rest
+                continue
             end
 
             string, fret = find_best_note(possible_indices, last_s, last_f)
-            push!(note_frets, (string, fret, note_beats))
+            push!(current_line, (string, fret, note_beats))
+            last_s, last_f = string, fret
         else
-            push!(note_frets, (-1, -1, note_beats)) #string/fret for a rest is -1
-        end                          
+            push!(current_line, (-1, -1, note_beats)) #string/fret for a rest is -1
+        end 
+        
+        if current_note == max_notes
+            push!(note_frets, current_line)
+            current_line = []
+            current_note = 0
+        end
+    end
+
+    if length(current_line) > 0
+        push!(note_frets, current_line)
     end
 
     return note_frets
