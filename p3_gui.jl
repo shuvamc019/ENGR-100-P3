@@ -17,10 +17,11 @@ global initial_tab = ""
 function analyze_signals(song, S, bpm)
     envelope = find_envelope(song) # find envelope needs song vector
     durations = find_durations(envelope) # this is fine
-    bpm = convert(Float32, bpm)
     print(durations)
+    bpm = convert(Float32, bpm)
     frequencies = compute_frequencies(song, durations, S, bpm) # here is the problem child
     note_frets = correlate(frequencies)
+    print(note_frets)
     return note_frets
 end
 

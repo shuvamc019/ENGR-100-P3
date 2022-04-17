@@ -21,7 +21,7 @@ function correlate(frequencies)
         if frequency != -1 #this would be a rest
             possible_indices = [] #all possible locations for this frequency
 
-            for j in 1:length(fret_frequencies)
+            for j in 1:(length(fret_frequencies)-1)
                 if frequency > fret_frequencies[j] && frequency < fret_frequencies[j + 1] #frequency is between these 2 values
                     if (fret_frequencies[j + 1] - frequency) > (fret_frequencies[j] - frequency)
                         push!(possible_indices, j - 1) #uses 0-based index for convenient computations
