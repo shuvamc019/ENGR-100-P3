@@ -10,18 +10,14 @@ const N = 1024 # buffer length
 const maxtime = 100 # maximum recording time 10 seconds (for demo)
 recording = nothing # flag
 nsample = 0 # count number of samples recorded
-#song = nothing # initialize "song"  ##commented out since it was causing issues in analyze_signals
-global initial_tab = ""
 
-
+#calls all functions needed to translate a raw song into a vector of string/fret for each note in song
 function analyze_signals(song, S, bpm)
-    envelope = find_envelope(song) # find envelope needs song vector
-    durations = find_durations(envelope) # this is fine
-    print(durations)
+    envelope = find_envelope(song) 
+    durations = find_durations(envelope)
     bpm = convert(Float32, bpm)
-    frequencies = compute_frequencies(song, durations, S, bpm) # here is the problem child
+    frequencies = compute_frequencies(song, durations, S, bpm)
     note_frets = correlate(frequencies)
-    print(note_frets)
     return note_frets
 end
 
@@ -81,10 +77,9 @@ function call_stop(w)
 
     bpm = input_dialog("Enter BPM", "")
     bpm = parse(Int64, bpm[2])
-    #bpm = convert(Float, bpm)
 
-    note_frets = analyze_signals(song, S2, bpm)
-    display_tab(note_frets)
+    note_frets = analyze_signals(song, S2, bpm) #creates vector of string/fret for each subsequent note
+    display_tab(note_frets) #displays the strings and frets to user
 end
 
 #callback function to upload a file
@@ -92,17 +87,11 @@ function upload_file(w)
     filename = open_dialog("Pick a file", GtkNullContainer(), ("*.wav",))
     song, S = wavread(string(filename))
 
-    #println(size(song))
-
     bpm = input_dialog("Enter BPM", "")
     bpm = parse(Int64, bpm[2])
-    #bpm = convert(Float, bpm)
 
-    note_frets = analyze_signals(song, S, bpm)
-
-    println(note_frets)
-    
-    display_tab(note_frets)
+    note_frets = analyze_signals(song, S, bpm) #creates vector of string/fret for each subsequent note
+    display_tab(note_frets) #displays the strings and frets to user
 end
 
 
@@ -119,67 +108,56 @@ set_gtk_property!(g, :row_homogeneous, false) # stretch with window resize
 set_gtk_property!(g, :column_homogeneous, true)
 
 
-function make_button(string, callback, column, row, stylename, styledata)
+function make_button(string, callback, column, row, stylename, styledata) # modified to include grid column / row
     b = GtkButton(string)
     signal_connect((w) -> callback(w), b, "clicked")
-    g[column,row] = b
+    g[column,row] = b 
     s = GtkCssProvider(data = "#$stylename {$styledata}")
     push!(GAccessor.style_context(b), GtkStyleProvider(s), 600)
     set_gtk_property!(b, :name, stylename)
     return b
 end
 
-## create buttons with appropriate callbacks, positions, and styles
+br = make_button("Record", call_record, 1, 1, "wr", "color:white; background:red;")
+bs = make_button("Stop", call_stop, 2, 1, "yb", "color:yellow; background:blue;")
+bp = make_button("Play", call_play, 3, 1, "wg", "color:white; background:green;")
+bu = make_button("Upload", upload_file, 4, 1, "by", "color:blue; background:yellow;")
 
-# first row
-#bu = make_button("Upload", call_upload, 1:3, 1) 
-
-# second row
-br = make_button("Record", call_record, 1, 2, "wr", "color:white; background:red;")
-bs = make_button("Stop", call_stop, 2, 2, "yb", "color:yellow; background:blue;")
-bp = make_button("Play", call_play, 3, 2, "wg", "color:white; background:green;")
-bu = make_button("Upload", upload_file, 4, 2, "by", "color:blue; background:yellow;")
-
-# third row
 btext = GtkTextView()
 bbuffer = get_gtk_property(btext, :buffer, GtkTextBufferLeaf)
 
-string_names = ["E ", "A ", "D ", "G ", "B ", "e "]
+string_names = ["E ", "A ", "D ", "G ", "B ", "e "] # to display to the left
 
+# displays the tab to the Gtk text window (textview). goes line by line to avoid having to constantly translate the iterator in Gtk
 function display_tab(note_frets)
     initial_tab = ""
     for line in note_frets
         
-        for string_num in 6:-1:1  # 6th string is the lowest on the guitar
+        for string_num in 6:-1:1  # reverse since 6th string is the lowest on the guitar
             initial_tab *= string_names[string_num]
             for note in line
-                stringN, fret, duration = note[1], note[2], (note[3] / 0.25) # /.25 since duration is in beats and 16th note is smallest duration in our program
-                if stringN == string_num
+                stringN, fret, duration = note[1], note[2], (note[3] / 0.25) # /.25 since duration is in beats and 16th note is smallest duration in our program...
+                if stringN == string_num                                     # each character/dashed-line represents a 16th note
                     initial_tab *= string(fret) # insert fret number
                     for _ in 2:duration
-                        initial_tab *= "_"
+                        initial_tab *= "_" # implies sustained duration after a note is played
                     end
                 else
                     for _ in 1:duration
-                        initial_tab *= "-"  # insert -
+                        initial_tab *= "-"  # implies a rest
                     end
                 end  
             end
-            initial_tab *= "\n" # insert newline
+            initial_tab *= "\n" # insert newline for next string
         end
-        initial_tab *= "\n"
+        initial_tab *= "\n"  # insert newline before making the next tab block below this one
     end
 
-    set_gtk_property!(bbuffer, :text, initial_tab)
-    set_gtk_property!(btext, :monospace, true)
+    set_gtk_property!(bbuffer, :text, initial_tab) # apply the text into the buffer
+    set_gtk_property!(btext, :monospace, true) # monospaced text so durations all line up
 end
 
-
-
-
-## NEED AN UPDATE TAB BUTTON FASHO##
-
-g[1:4,3] = btext
+g[1:4,2] = btext # push the text buffer into the grid
 
 win = GtkWindow("gtk3", 600, 400) # 600×200 pixel window for all the buttons
 push!(win, g) # put button grid into the window

@@ -3,17 +3,15 @@ using FFTW
 using WAV: wavread
 using Plots
 
-#global song, sample = wavread("guitar_solo_f minor_100bpm.wav")
-
-#compute note durations
+# creates the envelope of signal used in note duration calculation (take absolute value of average of sliding window across signal)
 function find_envelope(x; h::Int = 1000) # sliding window half-width
     x = abs.(x)
     return [zeros(h);
     [sum(x[(n-h):(n+h)]) / (2h+1) for n in (h+1):(length(x)-h)];  ## FFTW could not create plan is caused by fft(Float32[]),
-    zeros(h)]                                                     ## so maybe 
+    zeros(h)]                                                     
 end
 
-
+# finds the start and attack time of each note via threshold, then stores them and their difference (i.e. the durations) in a vector
 function find_durations(envelope, threshold::Float64 = 0.015)
     durations = []
     note_attack_time = -1
@@ -29,8 +27,8 @@ function find_durations(envelope, threshold::Float64 = 0.015)
             elseif signal_val < threshold && note_attack_time != -1
                 note_release_time = t 
                 push!(durations, (note_release_time - note_attack_time, note_attack_time, note_release_time))
-                note_attack_time = -1
-                skip = t + 3500
+                note_attack_time = -1 # so loop won't detect any attacks after the note signal has already started
+                skip = t + 3500 # need to skip this interval since signal will both decay and oscillate around the threshold
             end
         end
     end
@@ -38,8 +36,8 @@ function find_durations(envelope, threshold::Float64 = 0.015)
     return durations
 end
 
-#compute frequencies
-
+# computes the fundamental frequency for each note via an autocorrelation of each signal segment
+# also converts durations to beats with a bpm and stores in vector
 function compute_frequencies(song, durations, sample, bpm::Float32, buffer::Int=150)
     frequencies = []
     
@@ -75,7 +73,7 @@ function compute_frequencies(song, durations, sample, bpm::Float32, buffer::Int=
         frequency = sample/period
 
         note_beats = duration_seconds * bps
-        note_beats = round(Integer, note_beats * 4) / 4 #rounds to nearest 0.25
+        note_beats = round(Integer, note_beats * 4) / 4 #rounds to nearest 0.25 for 16th notes
 
         push!(frequencies, (frequency, note_beats))
 
@@ -92,5 +90,3 @@ function compute_frequencies(song, durations, sample, bpm::Float32, buffer::Int=
 
     return frequencies
 end
-
-# should consider making a song class so we can get song.frequencies, song.durations, etc... would make things easier
