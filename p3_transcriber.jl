@@ -45,43 +45,43 @@ function correlate(frequencies)
         end                          
     end
 
-    println(note_frets)
-
-    return equalize_lines(note_frets)
+    return equalize_lines(note_frets) #splits into equal-sized lines
 end
 
+#takes in note_frets from correlate() and splits it into several lines with equal numbers of beats
+#this ensures that the outputted tablature will not be one long line and will look even to the user
 function equalize_lines(note_frets)
-    ordered_note_frets = []
+    line_split_frets = [] #vector to hold all of the lines
 
-    max_beats = 25
-    current_beats = 0
-    current_line = []
+    max_beats = 25 #max number of beats in any one line
+    current_beats = 0 #how many beats are already in the current line
+    current_line = [] #holds all of the notes in the current line
 
     for note in note_frets
         beats = note[3]
-        if current_beats == max_beats
-            push!(ordered_note_frets, current_line)
+        if current_beats == max_beats #if the current line has exactly max_beats, just add the current line to line_split_frets and start a new line
+            push!(line_split_frets, current_line)
             current_line = [note]
             current_beats = 0
-        elseif current_beats + beats > max_beats
+        elseif current_beats + beats > max_beats  #if adding this note would put the line over max_beats, then we split it into two note
             difference = max_beats - current_beats
-            note_1 = (note[1], note[2], difference)
-            note_2 = (note[1], note[2], beats - difference)
+            note_1 = (note[1], note[2], difference) #this is the note to go on the current line
+            note_2 = (note[1], note[2], beats - difference) #this note goes on the next line 
 
             push!(current_line, note_1)
-            push!(ordered_note_frets, current_line)
+            push!(line_split_frets, current_line)
             current_line = [note_2]
             current_beats = beats - difference
-        else
+        else #this means that adding the current note would not put the line over max_beats
             push!(current_line, note)
             current_beats += beats
         end
     end
     
-    push!(ordered_note_frets, current_line)
-    println(ordered_note_frets)
+    push!(line_split_frets, current_line)
+    println(line_split_frets)
 
-    return ordered_note_frets
+    return line_split_frets
 end
 
 #converts a fret_frequencies vector index to string and fret #s
