@@ -132,7 +132,6 @@ string_names = ["E ", "A ", "D ", "G ", "B ", "e "] # to display to the left
 function display_tab(note_frets)
     initial_tab = ""
     for line in note_frets
-        
         for string_num in 6:-1:1  # reverse since 6th string is the lowest on the guitar
             initial_tab *= string_names[string_num]
             for note in line

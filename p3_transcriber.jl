@@ -10,19 +10,13 @@ fret_frequencies = [82.41,87.31,92.5,98.0,103.83,110,116.54,123.47,130.81,138.59
 # converts each frequency to its corresponding string/fret combo
 # prioritizes the string/fret combo that is closest to the last played note
 function correlate(frequencies)
-    max_notes = 30 # max number of notes for an entire row of tablature
-    current_note = 0 #how many notes are already in the current tablature row, creates new row when current_note = max_notes
-    current_line = [] #stores all notes in the current row
-
-    last_s, last_f = 0, 0
-
+    note_frets = []
     for i in 1:length(frequencies) #looping through frequency vector
-        current_note += 1
         frequency = frequencies[i][1]
-        num_beats = frequencies[i][2]
+        note_beats = frequencies[i][2]
 
         if frequency != -1 #this would be a rest
-            possible_indices = [] #all possible string/frets for this frequency
+            possible_indices = [] #all possible locations for this frequency
 
             for j in 1:(length(fret_frequencies)-1)
                 if frequency > fret_frequencies[j] && frequency < fret_frequencies[j + 1] #frequency is between these 2 values
@@ -39,25 +33,55 @@ function correlate(frequencies)
                 continue
             end
 
-            string, fret = find_best_note(possible_indices, last_s, last_f) #finds the easiest-to-play note from all indices in possible_indices
-            push!(current_line, (string, fret, num_beats))
-            last_s, last_f = string, fret
+            last_s, last_f = 0, 0 #the string and fret of the last played note
+            if i >= 3
+                last_s, last_f = note_frets[i - 2][1], note_frets[i - 2][2]
+            end
+
+            string, fret = find_best_note(possible_indices, last_s, last_f)
+            push!(note_frets, (string, fret, note_beats))
         else
-            push!(current_line, (-1, -1, num_beats)) #string/fret for a rest is -1
-        end 
-        
-        if current_note == max_notes #creates a new row
-            push!(note_frets, current_line)
-            current_line = []
-            current_note = 0
+            push!(note_frets, (-1, -1, note_beats)) #string/fret for a rest is -1
+        end                          
+    end
+
+    println(note_frets)
+
+    return equalize_lines(note_frets)
+end
+
+function equalize_lines(note_frets)
+    ordered_note_frets = []
+
+    max_beats = 25
+    current_beats = 0
+    current_line = []
+
+    for note in note_frets
+        beats = note[3]
+        if current_beats == max_beats
+            push!(ordered_note_frets, current_line)
+            current_line = [note]
+            current_beats = 0
+        elseif current_beats + beats > max_beats
+            difference = max_beats - current_beats
+            note_1 = (note[1], note[2], difference)
+            note_2 = (note[1], note[2], beats - difference)
+
+            push!(current_line, note_1)
+            push!(ordered_note_frets, current_line)
+            current_line = [note_2]
+            current_beats = beats - difference
+        else
+            push!(current_line, note)
+            current_beats += beats
         end
     end
+    
+    push!(ordered_note_frets, current_line)
+    println(ordered_note_frets)
 
-    if length(current_line) > 0
-        push!(note_frets, current_line)
-    end
-
-    return note_frets
+    return ordered_note_frets
 end
 
 #converts a fret_frequencies vector index to string and fret #s
