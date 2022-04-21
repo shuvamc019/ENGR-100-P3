@@ -62,6 +62,8 @@ function compute_frequencies(song, durations, sample, bpm::Float32, buffer::Int=
         
         autocorr = real((ifft(abs2.(fft([signal; zeros(size(signal))])))) / sum(abs2, signal))
 
+        plot(autocorr, xlims=[0,1000])
+
         idxs = [autocorr[k] > autocorr[k+1] && autocorr[k] > autocorr[k-1] && autocorr[k] > 0.8 for k in 2:(length(autocorr) - 1)]
         all_idxs = findall(idxs)
         

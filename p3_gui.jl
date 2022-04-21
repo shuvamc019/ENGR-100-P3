@@ -17,6 +17,7 @@ function analyze_signals(song, S, bpm)
     durations = find_durations(envelope)
     bpm = convert(Float32, bpm)
     frequencies = compute_frequencies(song, durations, S, bpm)
+    print(frequencies)
     note_frets = correlate(frequencies)
     return note_frets
 end
@@ -162,4 +163,3 @@ win = GtkWindow("gtk3", 600, 400) # 600×200 pixel window for all the buttons
 push!(win, g) # put button grid into the window
 showall(win) # display the window full of buttons
 nothing
-

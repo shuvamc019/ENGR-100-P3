@@ -31,7 +31,7 @@ function correlate(frequencies)
             end 
 
             if length(possible_indices) == 0
-                push!(current_line, (-1, -1, num_beats)) #note not recognized so treat like a rest
+                push!(note_frets, (-1, -1, note_beats)) #note not recognized so treat like a rest
                 continue
             end
 
@@ -77,7 +77,6 @@ function equalize_lines(note_frets)
     end
     
     push!(line_split_frets, current_line)
-    println(line_split_frets)
 
     return line_split_frets
 end
