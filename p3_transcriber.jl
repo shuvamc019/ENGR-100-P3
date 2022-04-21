@@ -35,10 +35,6 @@ function correlate(frequencies)
                 continue
             end
 
-            if i >= 3
-                last_s, last_f = note_frets[i - 2][1], note_frets[i - 2][2]
-            end
-
             string, fret = find_best_note(possible_indices, last_s, last_f)
             push!(note_frets, (string, fret, note_beats))
             last_s, last_f = string, fret
