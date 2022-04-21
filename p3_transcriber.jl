@@ -11,6 +11,8 @@ fret_frequencies = [82.41,87.31,92.5,98.0,103.83,110,116.54,123.47,130.81,138.59
 # prioritizes the string/fret combo that is closest to the last played note
 function correlate(frequencies)
     note_frets = []
+    last_s, last_f = 0, 0  #the string and fret of the last played note, will be set in loop
+
     for i in 1:length(frequencies) #looping through frequency vector
         frequency = frequencies[i][1]
         note_beats = frequencies[i][2]
@@ -33,13 +35,13 @@ function correlate(frequencies)
                 continue
             end
 
-            last_s, last_f = 0, 0 #the string and fret of the last played note
             if i >= 3
                 last_s, last_f = note_frets[i - 2][1], note_frets[i - 2][2]
             end
 
             string, fret = find_best_note(possible_indices, last_s, last_f)
             push!(note_frets, (string, fret, note_beats))
+            last_s, last_f = string, fret
         else
             push!(note_frets, (-1, -1, note_beats)) #string/fret for a rest is -1
         end                          
